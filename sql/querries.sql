@@ -36,4 +36,12 @@ WHERE id_animal IN (
     FROM cartao_vacina
     WHERE nome_vacina = 'Anti-Rabica'
 );
+-- União do nome e telefone dos clientes com o nome e o telefone dos veterinários
+SELECT nome, telefone
+FROM cliente 
+UNION
+SELECT nome, telefone
+FROM veterinario
+
+
 ----------------------------------------------------------------------------------------

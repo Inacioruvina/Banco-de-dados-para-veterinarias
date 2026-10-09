@@ -37,11 +37,21 @@ WHERE id_animal IN (
     WHERE nome_vacina = 'Anti-Rabica'
 );
 -- União do nome e telefone dos clientes com o nome e o telefone dos veterinários
+
 SELECT nome, telefone
 FROM cliente 
 UNION
 SELECT nome, telefone
 FROM veterinario
 
+-- Utilização de tabelas temporárias para selecionar as especies com o peso medio maior do que 5
 
+WITH Tabela_media AS (
+    SELECT especie, AVG(peso) AS peso_medio
+    FROM animal
+    GROUP BY especie
+)
+SELECT peso_medio
+FROM Tabela_media
+WHERE peso_medio > 5;
 ----------------------------------------------------------------------------------------

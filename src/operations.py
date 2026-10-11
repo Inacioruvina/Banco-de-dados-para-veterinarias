@@ -77,4 +77,24 @@ def find_vaccined_animals(conexao, nome_vacina):
     cursor.close()
     
     return resultados
+
+# Função de listagem total de contatos, união de clientes e veterinários
+ 
+def unified_contact_list(conexao):
+    cursor = conexao.cursor()
+    
+    sql = """
+    SELECT nome, telefone
+    FROM cliente
+    UNION
+    SELECT nome, telefone
+    FROM veterinario
+    ORDER BY nome ASC;
+    """
+    
+    cursor.execute(sql)
+    resultados = cursor.fetchall()
+    cursor.close()
+    
+    return resultados
 #----------------------------------------------------------------------------------------

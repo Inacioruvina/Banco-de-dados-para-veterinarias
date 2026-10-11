@@ -57,4 +57,24 @@ def consultas_por_clinica(conexao):
     
     return resultados
     
+# Função para encontrar animais vacinados com determinada vacina
+
+def find_vaccined_animals(conexao, nome_vacina):
+    cursor = conexao.cursor()
+    
+    sql = """
+    SELECT nome, especie
+    FROM animal
+    WHERE id_animal IN (
+        SELECT id_animal
+        FROM cartao_vacina
+        WHERE nome_vacina = ?
+    )
+    """
+    
+    cursor.execute(sql, (nome_vacina,))
+    resultados = cursor.fetchall()
+    cursor.close()
+    
+    return resultados
 #----------------------------------------------------------------------------------------

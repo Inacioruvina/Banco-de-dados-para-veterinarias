@@ -1,1 +1,18 @@
+# Ambientes virtuais
+.venv/
+venv/
 
+# Arquivos gerados pelo Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configuracao local com credenciais
+.env
+
+# Editores e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -61,7 +61,20 @@ def main ():
                 
             case "3":
                 
-                pass
+                resultados = operations.consultas_por_clinica(conexao)
+                
+                if not resultados:
+                    
+                    print("Sem informacoes de clinicas")
+                    
+                else:
+                    
+                    for linha in resultados:
+                        clId, clNome, totalConsultas = linha
+                        print("-"*30)
+                        print(f"Id da clinica: {clId}")
+                        print(f"Nome da clinica: {clNome}")
+                        print(f"Total de consultas: {totalConsultas}")
                 
             case "4":
             

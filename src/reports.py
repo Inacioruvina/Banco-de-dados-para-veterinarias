@@ -78,11 +78,36 @@ def main ():
                 
             case "4":
             
-                pass
+                nomeVac = input("Digite o nome da vacina: ")
+                
+                resultados = operations.find_vaccined_animals(conexao, nomeVac)
+                
+                if not resultados:
+                    
+                    print("Sem animais com essa vacina")
+                    
+                else:
+                    for linha in resultados:
+                        nome, especie = linha
+                        print("-"*30)
+                        print(f"Nome do animal: {nome}")
+                        print(f"Especie do animal: {especie}")
                 
             case "5":
-            
-                pass
+                
+                resultados = operations.unified_contact_list(conexao)
+                
+                if not resultados:
+                    
+                    print("Sem lista de contatos")
+                    
+                else:
+                    
+                    for linha in resultados:
+                        nome, telefone = linha
+                        print("-"*30)
+                        print(f"Nome: {nome}")
+                        print(f"Telefone: {telefone}")
         
             case "  0":
                 

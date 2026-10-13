@@ -19,7 +19,7 @@ def search_by_weight(conexao, peso_minimo):
     
     return resultados
 
-# Função de listagem de consulta por veterinário
+# Função de listagem de consultas realizadas por veterinário
 
 def list_by_vet(conexao, id_vet):
     cursor = conexao.cursor()

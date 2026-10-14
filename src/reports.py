@@ -109,7 +109,7 @@ def main ():
                         print(f"Nome: {nome}")
                         print(f"Telefone: {telefone}")
         
-            case "  0":
+            case "0":
                 
                 print("\nEncerrando o sistema...")
                 conexao.close()

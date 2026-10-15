@@ -42,7 +42,7 @@ SELECT nome, telefone
 FROM cliente 
 UNION
 SELECT nome, telefone
-FROM veterinario
+FROM veterinario;
 
 -- Utilização de tabelas temporárias para selecionar as especies com o peso medio maior do que 5
 

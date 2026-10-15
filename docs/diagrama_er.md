@@ -1,87 +1,80 @@
 ```mermaid
 erDiagram
-    %% --- MÓDULO 1: CADASTRO BASE & INFRAESTRUTURA ---
-    Clinicas {
+    clinica {
         int id_clinica PK
-        string nome
-        string endereco
-        string telefone
+        varchar nome
+        varchar telefone
+        text endereco
     }
 
-    Clientes {
+    cliente {
         int id_cliente PK
-        string nome
-        string telefone
-        string email
+        varchar nome
+        varchar cpf
+        varchar telefone
+        text endereco
+        int id_clinica FK
     }
 
-    Animais {
+    veterinario {
+        int id_veterinario PK
+        varchar nome
+        varchar crmv
+        varchar telefone
+        varchar especialidade
+        int id_clinica FK
+    }
+
+    animal {
         int id_animal PK
-        string nome
-        string especie
-        string raca
-        date data_nascimento
+        varchar nome
+        varchar especie
+        varchar raca
+        varchar sexo
+        date data_de_nascimento
+        numeric peso
         int id_cliente FK
     }
 
-    %% --- MÓDULO 2: ATENDIMENTO CLÍNICO & CONSULTAS ---
-    Veterinarios {
-        int id_veterinario PK
-        string nome
-        string crmv
-        int id_clinica FK
-    }
-
-    Consultas {
-        int id_consulta PK
-        timestamp data_hora
-        string diagnostico
-        decimal valor
-        int id_animal FK
-        int id_veterinario FK
-        int id_clinica FK
-    }
-
-    Medicamentos {
-        int id_medicamento PK
-        string nome
-        string dosagem
-        int id_consulta FK
-    }
-
-    %% --- MÓDULO 3: AGENDAMENTOS & AUTOMAÇÃO ---
-    Agendamentos {
-        int id_agendamento PK
-        timestamp data_hora
-        string status
-        int id_animal FK
-        int id_veterinario FK
-    }
-
-    Vacinas {
-        int id_vacina PK
-        string nome_vacina
-        date data_aplicacao
-        date proxima_dose
-        int id_animal FK
-    }
-
-    Prontuario {
+    prontuario {
         int id_prontuario PK
-        string historico_medico
-        timestamp ultima_atualizacao
+        varchar nome
+        text historico_saude
+        text alergias
+        text observacoes
         int id_animal FK
     }
 
-    %% --- RELACIONAMENTOS DO BANCO ---
-    Clientes ||--o{ Animais : "possui"
-    Clinicas ||--o{ Veterinarios : "emprega"
-    Clinicas ||--o{ Consultas : "sedia"
-    Veterinarios ||--o{ Consultas : "realiza"
-    Animais ||--o{ Consultas : "recebe"
-    Consultas ||--o{ Medicamentos : "prescreve"
-    Animais ||--o{ Agendamentos : "agenda"
-    Veterinarios ||--o{ Agendamentos : "atende"
-    Animais ||--o{ Vacinas : "toma"
-    Animais ||--|| Prontuario : "possui"
+    cartao_vacina {
+        int id_vacina PK
+        varchar nome_vacina
+        date data_aplicacao
+        int numero_da_dose
+        date proxima_dose
+        text observacoes
+        int id_animal FK
+        int id_veterinario FK
+    }
+
+    consulta {
+        int id_consulta PK
+        date data_de_atendimento
+        time horario
+        text motivo
+        text diagnostico
+        text observacoes
+        int id_animal FK
+        int id_veterinario FK
+        int id_clinica FK
+    }
+
+    clinica ||--o{ cliente : "atende"
+    clinica ||--o{ veterinario : "emprega"
+    clinica ||--o{ consulta : "sedia"
+    cliente ||--o{ animal : "possui"
+    animal ||--o{ prontuario : "tem"
+    animal ||--o{ cartao_vacina : "recebe vacina"
+    animal ||--o{ consulta : "e atendido em"
+    veterinario ||--o{ cartao_vacina : "aplica"
+    veterinario ||--o{ consulta : "realiza"
 ```

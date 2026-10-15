@@ -1,15 +1,33 @@
 # Ambientes virtuais
 .venv/
 venv/
+env/
+ENV/
 
 # Arquivos gerados pelo Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*.egg-info/
+build/
+dist/
 
-# Configuracao local com credenciais
+# Caches de testes e ferramentas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Configuracao local com credenciais (o modelo .env.example continua versionado)
 .env
+.env.*
+!.env.example
+
+# Logs, dumps e backups locais do banco
+*.log
+*.bak
+*.dump
+*.backup
 
 # Editores e sistema operacional
 .vscode/

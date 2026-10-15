@@ -1,56 +1,79 @@
--- Dados de teste. Execute depois de ddl_schema.sql.
+-- =============================================================================
+-- povoamento.sql  |  Dados de teste (7 tabelas do ddl_schema.sql)
+-- Execute DEPOIS de ddl_schema.sql e UMA vez por schema criado.
+-- Para recomecar do zero, execute ddl_schema.sql novamente (ele recria tudo).
+-- Os dados sao ficticios.
+-- Obs.: a especie usa 'Cao' (sem acento) para casar com querries.sql/operations.py.
+-- =============================================================================
 BEGIN;
 
-INSERT INTO clinicas (nome, telefone, endereco)
-SELECT 'Clinica Exemplo Norte', '(00) 0000-0001', 'Rua Exemplo, 10'
-WHERE NOT EXISTS (
-    SELECT 1 FROM clinicas
-    WHERE nome = 'Clinica Exemplo Norte' AND telefone = '(00) 0000-0001'
-);
+INSERT INTO clinica (nome, telefone, endereco) VALUES
+    ('Clinica Exemplo Norte', '(00) 0000-0001', 'Rua Exemplo, 10'),
+    ('Clinica Exemplo Sul',   '(00) 0000-0002', 'Avenida Exemplo, 20');
 
-INSERT INTO clinicas (nome, telefone, endereco)
-SELECT 'Clinica Exemplo Sul', '(00) 0000-0002', 'Avenida Exemplo, 20'
-WHERE NOT EXISTS (
-    SELECT 1 FROM clinicas
-    WHERE nome = 'Clinica Exemplo Sul' AND telefone = '(00) 0000-0002'
-);
+INSERT INTO cliente (nome, cpf, telefone, endereco, id_clinica) VALUES
+    ('Ana Exemplo',   '111.111.111-11', '(00) 90000-0001', 'Rua A, 1',
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Norte')),
+    ('Bruno Exemplo', '222.222.222-22', '(00) 90000-0002', 'Rua B, 2',
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Sul')),
+    ('Carla Exemplo', '333.333.333-33', '(00) 90000-0003', 'Rua C, 3',
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Norte'));
 
-INSERT INTO clientes (nome, telefone, email)
-SELECT 'Ana Exemplo', '(00) 90000-0001', 'ana.exemplo@exemplo.com'
-WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'ana.exemplo@exemplo.com');
+INSERT INTO veterinario (nome, crmv, telefone, especialidade, id_clinica) VALUES
+    ('Dr. Paulo Exemplo',   'CRMV-00 1001', '(00) 91000-0001', 'Clinica Geral',
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Norte')),
+    ('Dra. Marina Exemplo', 'CRMV-00 1002', '(00) 91000-0002', 'Felinos',
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Sul'));
 
-INSERT INTO clientes (nome, telefone, email)
-SELECT 'Bruno Exemplo', '(00) 90000-0002', 'bruno.exemplo@exemplo.com'
-WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE email = 'bruno.exemplo@exemplo.com');
+INSERT INTO animal (nome, especie, raca, sexo, data_de_nascimento, peso, id_cliente) VALUES
+    ('Luna', 'Cao',  'Vira-lata',      'F', DATE '2021-04-12', 12.50,
+        (SELECT id_cliente FROM cliente WHERE nome = 'Ana Exemplo')),
+    ('Tico', 'Gato', 'Siames',         'M', DATE '2022-09-03',  4.30,
+        (SELECT id_cliente FROM cliente WHERE nome = 'Ana Exemplo')),
+    ('Mel',  'Cao',  'Poodle',         'F', DATE '2020-01-20',  6.80,
+        (SELECT id_cliente FROM cliente WHERE nome = 'Bruno Exemplo')),
+    ('Rex',  'Cao',  'Pastor Alemao',  'M', DATE '2018-03-10', 28.40,
+        (SELECT id_cliente FROM cliente WHERE nome = 'Bruno Exemplo')),
+    ('Thor', 'Cao',  'Labrador',       'M', DATE '2019-06-15', 32.00,
+        (SELECT id_cliente FROM cliente WHERE nome = 'Carla Exemplo'));
 
-INSERT INTO animais (nome, especie, raca, data_nascimento, id_cliente)
-SELECT 'Luna', 'Cão', 'Vira-lata', DATE '2021-04-12', c.id_cliente
-FROM clientes AS c
-WHERE c.email = 'ana.exemplo@exemplo.com'
-  AND NOT EXISTS (
-      SELECT 1 FROM animais AS a
-      WHERE a.id_cliente = c.id_cliente AND a.nome = 'Luna'
-        AND a.data_nascimento = DATE '2021-04-12'
-  );
+INSERT INTO prontuario (nome, historico_saude, alergias, observacoes, id_animal) VALUES
+    ('Prontuario Luna', 'Castrada em 2022.',  NULL,                'Animal docil.',
+        (SELECT id_animal FROM animal WHERE nome = 'Luna')),
+    ('Prontuario Tico', 'Sem intercorrencias.', 'Alergia a frango', NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Tico')),
+    ('Prontuario Thor', 'Displasia leve de quadril.', NULL,        'Acompanhar peso.',
+        (SELECT id_animal FROM animal WHERE nome = 'Thor'));
 
-INSERT INTO animais (nome, especie, raca, data_nascimento, id_cliente)
-SELECT 'Tico', 'Gato', 'Siames', DATE '2022-09-03', c.id_cliente
-FROM clientes AS c
-WHERE c.email = 'ana.exemplo@exemplo.com'
-  AND NOT EXISTS (
-      SELECT 1 FROM animais AS a
-      WHERE a.id_cliente = c.id_cliente AND a.nome = 'Tico'
-        AND a.data_nascimento = DATE '2022-09-03'
-  );
+INSERT INTO cartao_vacina (nome_vacina, data_aplicacao, numero_da_dose, proxima_dose,
+                           observacoes, id_animal, id_veterinario) VALUES
+    ('Anti-Rabica', DATE '2025-03-10', 1, DATE '2026-03-10', NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Luna'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dr. Paulo Exemplo')),
+    ('Anti-Rabica', DATE '2025-05-02', 1, DATE '2026-05-02', NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Thor'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dr. Paulo Exemplo')),
+    ('V4',          DATE '2025-06-20', 2, NULL,              NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Tico'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dra. Marina Exemplo'));
 
-INSERT INTO animais (nome, especie, raca, data_nascimento, id_cliente)
-SELECT 'Mel', 'Cão', 'Poodle', DATE '2020-01-20', c.id_cliente
-FROM clientes AS c
-WHERE c.email = 'bruno.exemplo@exemplo.com'
-  AND NOT EXISTS (
-      SELECT 1 FROM animais AS a
-      WHERE a.id_cliente = c.id_cliente AND a.nome = 'Mel'
-        AND a.data_nascimento = DATE '2020-01-20'
-  );
+INSERT INTO consulta (data_de_atendimento, horario, motivo, diagnostico, observacoes,
+                      id_animal, id_veterinario, id_clinica) VALUES
+    (DATE '2025-03-10', TIME '09:00', 'Vacinacao',       'Saudavel',         NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Luna'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dr. Paulo Exemplo'),
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Norte')),
+    (DATE '2025-04-15', TIME '14:30', 'Coceira intensa', 'Dermatite alergica', 'Retorno em 15 dias',
+        (SELECT id_animal FROM animal WHERE nome = 'Tico'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dra. Marina Exemplo'),
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Sul')),
+    (DATE '2025-05-02', TIME '10:15', 'Claudicacao',     'Displasia leve',   NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Thor'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dr. Paulo Exemplo'),
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Norte')),
+    (DATE '2025-07-01', TIME '16:00', 'Check-up anual',  'Saudavel',         NULL,
+        (SELECT id_animal FROM animal WHERE nome = 'Mel'),
+        (SELECT id_veterinario FROM veterinario WHERE nome = 'Dra. Marina Exemplo'),
+        (SELECT id_clinica FROM clinica WHERE nome = 'Clinica Exemplo Sul'));
 
 COMMIT;

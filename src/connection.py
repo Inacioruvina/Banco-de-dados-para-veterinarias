@@ -45,18 +45,33 @@ def get_connection() -> pyodbc.Connection:
         f"DRIVER={{{driver}}};SERVER={server};PORT={port};"
         f"DATABASE={database};UID={user};PWD={{{escaped_password}}}"
     )
-    return pyodbc.connect(connection_string, timeout=5)
+    try:
+        return pyodbc.connect(connection_string, timeout=5)
+    except pyodbc.Error as exc:
+        # A connection string (com a senha) nunca entra na mensagem de erro.
+        raise ConnectionError(
+            f"Falha na conexao com o PostgreSQL em {server}:{port}/{database}. "
+            "Verifique se o servico esta ativo, o driver ODBC instalado e o .env correto."
+        ) from exc
 
 
 @contextmanager
 def managed_connection() -> Iterator[pyodbc.Connection]:
-    """Fecha a conexão ao sair do bloco with, inclusive em caso de erro."""
+    """Fecha a conexão ao sair do bloco with, inclusive em caso de erro.
+
+    Falhas ao conectar viram ConnectionError; erros ocorridos dentro do bloco
+    with (ex.: SQL inválido) são propagados sem alteração.
+    """
     connection = None
     try:
         connection = get_connection()
-        yield connection
     except pyodbc.Error as exc:
         raise ConnectionError("Falha na conexao com o PostgreSQL") from exc
+
+    try:
+        yield connection
+    except pyodbc.Error:
+        connection.rollback()
+        raise
     finally:
-        if connection is not None:
-            connection.close()
+        connection.close()

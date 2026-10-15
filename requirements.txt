@@ -1,2 +1,4 @@
-pyodbc
-python-dotenv
+# Python 3.10+ (reports.py usa match/case)
+# Driver ODBC: instale tambem o "psqlODBC" (PostgreSQL Unicode) no sistema operacional.
+pyodbc>=5.0.0
+python-dotenv>=1.0.0

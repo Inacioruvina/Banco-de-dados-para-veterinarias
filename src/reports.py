@@ -1,14 +1,8 @@
 #----------------------------------------------------------------------------------------
 # Código INÁCIO
 
-import sys
-from pathlib import Path
-
-# Garante que os módulos do src/ sejam encontrados de qualquer diretório.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from connection import get_connection
-import operations
+from src.connection import get_connection
+from src import operations
 
 def main ():
     

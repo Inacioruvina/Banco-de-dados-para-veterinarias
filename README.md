@@ -14,8 +14,8 @@ psql -U postgres -d veterinaria -f sql/ddl_schema.sql     # 7 tabelas
 psql -U postgres -d veterinaria -f sql/povoamento.sql     # dados de teste
 psql -U postgres -d veterinaria -f sql/automation.sql     # views, trigger e perfis
 
-python src/main.py       # agendamentos e vacinas
-python src/reports.py    # relatórios
+python -m src.main       # agendamentos e vacinas (execute da raiz do projeto)
+python -m src.reports    # relatórios (execute da raiz do projeto)
 python -m unittest tests.test_connection
 ```
 

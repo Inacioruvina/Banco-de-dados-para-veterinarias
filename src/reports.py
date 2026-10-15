@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------------------
 # Código INÁCIO
 
-from connection import get_connection
-import operations
+from src.connection import get_connection
+from src import operations
 
 def main ():
     

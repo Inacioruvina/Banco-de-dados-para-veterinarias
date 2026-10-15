@@ -1,5 +1,5 @@
 import pyodbc
-from connection import get_connection
+from src.connection import get_connection
 
 # Exibe o menu de opções no terminal
 def menu_principal():

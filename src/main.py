@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Garante que os módulos do src/ sejam encontrados de qualquer diretório.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import pyodbc
 from connection import get_connection
 
@@ -19,7 +25,7 @@ def novo_agendamento(cursor):
     id_veterinario = int(input("ID do Veterinário: "))
 
     sql = """
-        INSERT INTO Agendamentos (data_hora, status, id_animal, id_veterinario)
+        INSERT INTO agendamento (data_hora, status, id_animal, id_veterinario)
         VALUES (?, ?, ?, ?)
     """
     cursor.execute(sql, (data_hora, status, id_animal, id_veterinario))
@@ -34,7 +40,7 @@ def registrar_vacina(cursor):
     id_animal = int(input("ID do Animal: "))
 
     sql = """
-        INSERT INTO Vacinas (nome_vacina, data_aplicacao, proxima_dose, id_animal)
+        INSERT INTO vacina (nome_vacina, data_aplicacao, proxima_dose, id_animal)
         VALUES (?, ?, ?, ?)
     """
     cursor.execute(sql, (nome_vacina, data_aplicacao, proxima_dose, id_animal))
@@ -43,7 +49,7 @@ def registrar_vacina(cursor):
 # Consulta os agendamentos através da visão criada no banco
 def listar_agendamentos(cursor):
     print("\n-- Resumo dos Agendamentos --")
-    sql = "SELECT * FROM vw_agendamentos_resumo"
+    sql = "SELECT * FROM vw_agendamento_resumo"
     cursor.execute(sql)
     registros = cursor.fetchall()
 

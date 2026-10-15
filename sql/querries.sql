@@ -51,7 +51,7 @@ WITH Tabela_media AS (
     FROM animal
     GROUP BY especie
 )
-SELECT peso_medio
+SELECT peso_medio, especie
 FROM Tabela_media
 WHERE peso_medio > 5;
 ----------------------------------------------------------------------------------------

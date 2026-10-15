@@ -54,4 +54,13 @@ WITH Tabela_media AS (
 SELECT peso_medio, especie
 FROM Tabela_media
 WHERE peso_medio > 5;
+
+SELECT 
+    c.data_hora,
+    c.diagnostico,
+    a.nome AS nome_animal,
+    v.nome AS nome_veterinario
+FROM cosulta AS c
+INNER JOIN animal AS a ON c.id_animal = a.id_animal
+INNER JOIN veterinario AS v ON c.id_veterinario = v.id_veterinario
 ----------------------------------------------------------------------------------------

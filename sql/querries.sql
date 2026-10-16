@@ -94,9 +94,31 @@ FROM consulta
 INTERSECT
 SELECT id_animal FROM cartao_vacina;
 
--- Seleção de animais que começam com a letra desejada
+-- Seleção de animais que começam com a letra L
 
 SELECT nome, especie, raca
 FROM animal
 WHERE nome LIKE '%L';
+
+-- Relatorio de animais na faixa de peso saudavel de 5kg a 30kg
+
+SELECT nome, especie, peso
+FROM animal
+WHERE peso BETWEEN 5 AND 30
+ORDER BY peso ASC;
+
+-- Peso total acumulado dos animais mantidos por cada cliente
+
+SELECT c.nome AS nome_cliente, SUM(a.peso) AS peso_total_animais
+FROM cliente AS c
+JOIN animal AS a ON c.id_cliente = a.id_cliente
+GROUP BY c.id_cliente, c.nome
+ORDER BY peso_total_animais DESC;
+
+-- Lista de especies que ja foram atendidas na clinica
+
+SELECT DISTINCT a.especie
+FROM animal AS a
+JOIN consulta AS c ON c.id_animal = a.id_animal
+ORDER BY especie ASC;
 ----------------------------------------------------------------------------------------

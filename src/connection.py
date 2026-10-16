@@ -1,6 +1,7 @@
 """Conexão com PostgreSQL via ODBC."""
 
 import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -8,8 +9,15 @@ from typing import Iterator
 import pyodbc
 from dotenv import load_dotenv
 
-
+# ── Resolução de caminhos ──────────────────────────────────────────────
+# parents[1] sobe de  src/connection.py  →  raiz do projeto
+# Assim o .env é encontrado independentemente do diretório de trabalho.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Garante que 'src/' está no sys.path para importações relativas
+_SRC_DIR = str(PROJECT_ROOT / "src")
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
 
 
 def _plain_value(name: str, value: str) -> str:

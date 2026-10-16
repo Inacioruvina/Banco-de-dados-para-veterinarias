@@ -1,9 +1,46 @@
-from connection import get_connection
-import operations
+# ----------------------------------------------------------------------------------------
+# reports.py  |  Menu interativo de relatórios (DQL)
+# Execução:  python src/reports.py   OU   cd src && python reports.py
+# ----------------------------------------------------------------------------------------
+
+import sys
+from pathlib import Path
+
+# ── Normalização de imports ────────────────────────────────────────────
+# Garante que 'src/' está no sys.path para que 'connection' e 'operations'
+# sejam encontrados independentemente de onde o script for chamado.
+_SRC_DIR = str(Path(__file__).resolve().parent)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
+from connection import get_connection  # noqa: E402
+import operations  # noqa: E402
+
+
+def _ler_float(mensagem: str) -> float:
+    """Lê um float do teclado com tratamento de ValueError."""
+    while True:
+        try:
+            return float(input(mensagem))
+        except ValueError:
+            print("Entrada invalida! Digite um numero valido.")
+
+
+def _ler_int(mensagem: str) -> int:
+    """Lê um inteiro do teclado com tratamento de ValueError."""
+    while True:
+        try:
+            return int(input(mensagem))
+        except ValueError:
+            print("Entrada invalida! Digite um numero inteiro valido.")
 
 
 def main():
-    conexao = get_connection()
+    try:
+        conexao = get_connection()
+    except (ConnectionError, ValueError) as erro:
+        print(f"Erro ao conectar ao banco de dados: {erro}")
+        return
 
     while True:
         print("\n" + "=" * 30)
@@ -20,11 +57,11 @@ def main():
         print("[0] Sair")
         print("=" * 30)
 
-        opcao = input("Digite a opcao: ")
+        opcao = input("Digite a opcao: ").strip()
 
         match opcao:
             case "1":
-                peso = float(input("Digite o valor do peso minimo: "))
+                peso = _ler_float("Digite o valor do peso minimo: ")
                 resultados = operations.buscar_animais_por_peso(conexao, peso)
 
                 if not resultados:
@@ -38,8 +75,8 @@ def main():
                         )
 
             case "2":
-                idVeterinario = int(
-                    input("Digite o ID do Veterinario que realizou a consulta: ")
+                idVeterinario = _ler_int(
+                    "Digite o ID do Veterinario que realizou a consulta: "
                 )
                 resultados = operations.list_by_vet(conexao, idVeterinario)
 
@@ -68,7 +105,7 @@ def main():
                         print(f"Total de consultas: {totalConsultas}")
 
             case "4":
-                nomeVac = input("Digite o nome da vacina: ")
+                nomeVac = input("Digite o nome da vacina: ").strip()
                 resultados = operations.find_vaccined_animals(conexao, nomeVac)
 
                 if not resultados:
@@ -93,8 +130,8 @@ def main():
                         print(f"Telefone: {telefone}")
 
             case "6":
-                peso_min = float(input("Digite o peso minimo (kg): "))
-                peso_max = float(input("Digite o peso maximo (kg): "))
+                peso_min = _ler_float("Digite o peso minimo (kg): ")
+                peso_max = _ler_float("Digite o peso maximo (kg): ")
 
                 resultados = operations.buscar_animais_faixa_peso(
                     conexao, peso_min, peso_max

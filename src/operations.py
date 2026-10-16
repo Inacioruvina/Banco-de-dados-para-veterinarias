@@ -97,4 +97,51 @@ def unified_contact_list(conexao):
     cursor.close()
     
     return resultados
+
+def buscar_animais_faixa_peso(conexao, peso_min, peso_max):
+    cursor = conexao.cursor()
+    
+    sql= """
+        SELECT nome, especie, peso
+        FROM animal
+        WHERE peso BETWEEN ? AND ?
+        ORDER BY peso ASC;
+    """
+    
+    cursor.execute(sql, (peso_min, peso_max))
+    resultados = cursor.fetchall()
+    cursor.close()
+    
+    return resultados;
+
+def peso_total_por_cliente(conexao):
+    cursor = conexao.cursor()
+    
+    sql = """
+        SELECT c.nome AS nome_cliente, SUM(a.peso) AS peso_total_animais
+        FROM cliente AS c
+        JOIN animal AS a ON c.id_cliente = a.id_cliente
+        GROUP BY c.id_cliente, c.nome
+        ORDER BY peso_total_animais DESC;
+    """
+    
+    cursor.execute(sql)
+    resultados = cursor.fetchall()
+    cursor.close()
+    
+    return resultados
+    
+def listar_especies_atendidas(conexao):
+    cursor = conexao.cursor() 
+    sql = """ 
+        SELECT DISTINCT a.especie 
+        FROM animal AS a 
+        JOIN consulta AS c ON c.id_animal = a.id_animal 
+        ORDER BY a.especie ASC; """ 
+        
+    cursor.execute(sql) 
+    resultados = cursor.fetchall() 
+    cursor.close() 
+    
+    return resultados
 #----------------------------------------------------------------------------------------

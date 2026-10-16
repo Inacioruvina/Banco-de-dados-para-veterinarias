@@ -42,7 +42,7 @@ SELECT nome, telefone
 FROM cliente 
 UNION
 SELECT nome, telefone
-FROM veterinario
+FROM veterinario;
 
 -- Utilização de tabelas temporárias para selecionar as especies com o peso medio maior do que 5
 
@@ -51,7 +51,74 @@ WITH Tabela_media AS (
     FROM animal
     GROUP BY especie
 )
-SELECT peso_medio
+SELECT peso_medio, especie
 FROM Tabela_media
 WHERE peso_medio > 5;
+
+-- Seleção de animais que ja tiveram consultas
+
+SELECT 
+    c.horario,
+    c.diagnostico,
+    a.nome AS nome_animal,
+    v.nome AS nome_veterinario
+FROM consulta AS c
+INNER JOIN animal AS a ON c.id_animal = a.id_animal
+INNER JOIN veterinario AS v ON c.id_veterinario = v.id_veterinario;
+
+
+-- Lista todos os animais e suas consultas (Incluindo animais que nunca consultaram)
+
+SELECT 
+    a.nome AS animal,
+    a.especie,
+    c.data_de_atendimento,
+    c.motivo
+FROM animal AS a
+LEFT OUTER JOIN consulta AS c ON a.id_animal = c.id_animal;
+
+-- Junção das duas tables animal e prontuario
+
+SELECT 
+    a.nome AS animal,
+    a.especie,
+    p.historico_saude,
+    p.alergias
+FROM animal AS a
+NATURAL JOIN prontuario AS p;
+
+-- Lista animais que passaram por consultas e já vacinaram
+
+SELECT id_animal 
+FROM consulta
+INTERSECT
+SELECT id_animal FROM cartao_vacina;
+
+-- Seleção de animais que começam com a letra L
+
+SELECT nome, especie, raca
+FROM animal
+WHERE nome LIKE '%L';
+
+-- Relatorio de animais na faixa de peso saudavel de 5kg a 30kg
+
+SELECT nome, especie, peso
+FROM animal
+WHERE peso BETWEEN 5 AND 30
+ORDER BY peso ASC;
+
+-- Peso total acumulado dos animais mantidos por cada cliente
+
+SELECT c.nome AS nome_cliente, SUM(a.peso) AS peso_total_animais
+FROM cliente AS c
+JOIN animal AS a ON c.id_cliente = a.id_cliente
+GROUP BY c.id_cliente, c.nome
+ORDER BY peso_total_animais DESC;
+
+-- Lista de especies que ja foram atendidas na clinica
+
+SELECT DISTINCT a.especie
+FROM animal AS a
+JOIN consulta AS c ON c.id_animal = a.id_animal
+ORDER BY especie ASC;
 ----------------------------------------------------------------------------------------

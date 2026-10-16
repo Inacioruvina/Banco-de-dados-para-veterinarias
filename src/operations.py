@@ -131,4 +131,17 @@ def peso_total_por_cliente(conexao):
     
     return resultados
     
+def listar_especies_atendidas(conexao):
+    cursor = conexao.cursor() 
+    sql = """ 
+        SELECT DISTINCT a.especie 
+        FROM animal AS a 
+        JOIN consulta AS c ON c.id_animal = a.id_animal 
+        ORDER BY a.especie ASC; """ 
+        
+    cursor.execute(sql) 
+    resultados = cursor.fetchall() 
+    cursor.close() 
+    
+    return resultados
 #----------------------------------------------------------------------------------------

@@ -55,12 +55,48 @@ SELECT peso_medio, especie
 FROM Tabela_media
 WHERE peso_medio > 5;
 
+-- Seleção de animais que ja tiveram consultas
+
 SELECT 
-    c.data_hora,
+    c.horario,
     c.diagnostico,
     a.nome AS nome_animal,
     v.nome AS nome_veterinario
-FROM cosulta AS c
+FROM consulta AS c
 INNER JOIN animal AS a ON c.id_animal = a.id_animal
-INNER JOIN veterinario AS v ON c.id_veterinario = v.id_veterinario
+INNER JOIN veterinario AS v ON c.id_veterinario = v.id_veterinario;
+
+
+-- Lista todos os animais e suas consultas (Incluindo animais que nunca consultaram)
+
+SELECT 
+    a.nome AS animal,
+    a.especie,
+    c.data_de_atendimento,
+    c.motivo
+FROM animal AS a
+LEFT OUTER JOIN consulta AS c ON a.id_animal = c.id_animal;
+
+-- Junção das duas tables animal e prontuario
+
+SELECT 
+    a.nome AS animal,
+    a.especie,
+    p.historico_saude,
+    p.alergias
+FROM animal AS a
+NATURAL JOIN prontuario AS p;
+
+-- Lista animais que passaram por consultas e já vacinaram
+
+SELECT id_animal 
+FROM consulta
+INTERSECT
+SELECT id_animal FROM cartao_vacina;
+
+-- Seleção de animais que começam com a letra desejada
+
+SELECT nome, especie, raca
+FROM animal
+WHERE nome LIKE '%L';
 ----------------------------------------------------------------------------------------

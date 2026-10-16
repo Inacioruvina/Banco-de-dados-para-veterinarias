@@ -111,3 +111,5 @@ WHERE a.nome = 'Luna'
   AND NOT EXISTS (
       SELECT 1 FROM prontuario WHERE id_animal = a.id_animal
   );
+
+  COMMIT;

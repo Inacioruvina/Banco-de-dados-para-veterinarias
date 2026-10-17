@@ -9,10 +9,10 @@ Requisitos: Python 3.10+, PostgreSQL e o driver ODBC `psqlODBC` (PostgreSQL Unic
 pip install -r requirements.txt
 copy .env.example .env        # preencha DB_PORT, DB_DATABASE, DB_USER e DB_PASSWORD
 
-psql -U postgres -c "CREATE DATABASE veterinaria"
-psql -U postgres -d veterinaria -f sql/ddl_schema.sql     # 7 tabelas
-psql -U postgres -d veterinaria -f sql/povoamento.sql     # dados de teste
-psql -U postgres -d veterinaria -f sql/automation.sql     # views, trigger e perfis
+psql -U postgres -c "CREATE DATABASE veterinaria_db"
+psql -U postgres -d veterinaria_db -f sql/ddl_schema.sql     # 7 tabelas
+psql -U postgres -d veterinaria_db -f sql/povoamento.sql     # dados de teste
+psql -U postgres -d veterinaria_db -f sql/automation.sql     # views, trigger e perfis
 
 python -m src.main       # agendamentos e vacinas (execute da raiz do projeto)
 python -m src.reports    # relatórios (execute da raiz do projeto)

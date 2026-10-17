@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------------------
-# main.py  |  Sistema Operacional da Clínica Veterinária (Atendimento e Cadastros)
+# main.py  |  Sistema Operacional da Rede Veterinária (Atendimento e Cadastros)
 # Execução:  python src/main.py   OU   python -m src.main
 # ----------------------------------------------------------------------------------------
 
@@ -16,7 +16,16 @@ import pyodbc  # noqa: E402
 from connection import get_connection  # noqa: E402
 
 
-# ── Utilitários de Leitura e Validação ───────────────────────────────────
+# ── Utilitários de Validação e Dependências ──────────────────────────────
+def _contar_registros(cursor, tabela: str) -> int:
+    """Retorna a contagem de registros em uma tabela para validação de dependências."""
+    tabelas_validas = {"clinica", "cliente", "veterinario", "animal", "consulta", "cartao_vacina"}
+    if tabela not in tabelas_validas:
+        raise ValueError(f"Tabela inválida: {tabela}")
+    cursor.execute(f"SELECT COUNT(*) FROM {tabela}")
+    return cursor.fetchone()[0]
+
+
 def _ler_int_faixa(mensagem: str, min_val: int, max_val: int) -> int:
     """Lê um inteiro dentro de uma faixa especificada."""
     while True:
@@ -70,20 +79,36 @@ def _ler_horario(mensagem: str) -> str:
 
 # ── Seleção e Busca por Nome (UX do Atendente) ───────────────────────────
 def selecionar_clinica(cursor) -> tuple[int | None, str | None]:
-    """Lista as clínicas cadastradas para vinculação."""
-    cursor.execute("SELECT id_clinica, nome, endereco FROM clinica ORDER BY id_clinica")
-    clinicas = cursor.fetchall()
-    if not clinicas:
-        print("Nenhuma clínica cadastrada no banco de dados.")
-        return None, None
+    """Lista as clínicas cadastradas para vinculação ou permite cadastrar uma nova."""
+    while True:
+        cursor.execute("SELECT id_clinica, nome, endereco FROM clinica ORDER BY id_clinica")
+        clinicas = cursor.fetchall()
+        if not clinicas:
+            print("\n[Aviso] Nenhuma clínica cadastrada no banco de dados.")
+            cadastrar = input("Deseja cadastrar uma clínica agora? (s/n): ").strip().lower()
+            if cadastrar == "s":
+                novo_id, nome = cadastrar_clinica(cursor)
+                if novo_id:
+                    return novo_id, nome
+            return None, None
 
-    print("\n--- Clínicas Disponíveis ---")
-    for idx, (id_c, nome, end) in enumerate(clinicas, 1):
-        print(f"  [{idx}] {nome} ({end or 'Sem endereço'})")
+        print("\n--- Clínicas Cadastradas ---")
+        for idx, (id_c, nome, end) in enumerate(clinicas, 1):
+            print(f"  [{idx}] {nome} ({end or 'Sem endereço informado'})")
+        print(f"  [{len(clinicas) + 1}] + Cadastrar Nova Clínica")
+        print("  [0] Cancelar")
 
-    escolha = _ler_int_faixa("Escolha o número da clínica: ", 1, len(clinicas))
-    id_c, nome, _ = clinicas[escolha - 1]
-    return id_c, nome
+        escolha = _ler_int_faixa("Escolha a clínica: ", 0, len(clinicas) + 1)
+        if escolha == 0:
+            return None, None
+        if escolha == len(clinicas) + 1:
+            novo_id, nome = cadastrar_clinica(cursor)
+            if novo_id:
+                return novo_id, nome
+            continue
+
+        id_c, nome, _ = clinicas[escolha - 1]
+        return id_c, nome
 
 
 def selecionar_ou_buscar_cliente(cursor) -> tuple[int | None, str | None]:
@@ -187,7 +212,7 @@ def selecionar_veterinario(cursor) -> tuple[int | None, int | None, str | None]:
     """)
     vets = cursor.fetchall()
     if not vets:
-        print("\nNenhum funcionário/veterinário cadastrado no sistema.")
+        print("\n[Aviso] Nenhum funcionário/veterinário cadastrado no sistema.")
         cadastrar = input("Deseja cadastrar um veterinário agora? (s/n): ").strip().lower()
         if cadastrar == "s":
             novo_id, id_clinica, nome = cadastrar_veterinario(cursor)
@@ -206,10 +231,44 @@ def selecionar_veterinario(cursor) -> tuple[int | None, int | None, str | None]:
     return id_v, id_c, nome
 
 
-# ── Operações de Cadastro (DML) ──────────────────────────────────────────
+# ── Operações de Cadastro (DML com Validação de Dependências) ────────────
+def cadastrar_clinica(cursor) -> tuple[int | None, str | None]:
+    """Cadastra uma nova clínica veterinária na rede."""
+    print("\n-- Cadastro de Nova Clínica Veterinária --")
+    nome = input("Nome da Clínica (ex: Clínica Veterinária Central): ").strip()
+    while not nome:
+        nome = input("O nome da clínica é obrigatório. Digite o nome: ").strip()
+
+    telefone = input("Telefone de contato (ex: (63) 3000-0000): ").strip() or None
+    endereco = input("Endereço completo (Rua, Número, Bairro): ").strip() or None
+
+    sql = """
+        INSERT INTO clinica (nome, telefone, endereco)
+        VALUES (?, ?, ?)
+        RETURNING id_clinica
+    """
+    cursor.execute(sql, (nome, telefone, endereco))
+    id_novo = cursor.fetchone()[0]
+    print(f"\nClínica '{nome}' cadastrada com sucesso (ID: {id_novo})!")
+    return id_novo, nome
+
+
 def cadastrar_cliente(cursor, nome_sugerido: str = "") -> int | None:
     """Cadastra um novo tutor/cliente associado a uma clínica."""
     print("\n-- Cadastro de Novo Tutor (Cliente) --")
+
+    # Dependência: precisa ter ao menos uma clínica cadastrada
+    if _contar_registros(cursor, "clinica") == 0:
+        print("\n[Dependência não atendida] Não é possível cadastrar um cliente sem uma clínica cadastrada no sistema.")
+        cadastrar = input("Deseja cadastrar uma clínica agora? (s/n): ").strip().lower()
+        if cadastrar == "s":
+            id_clinica, _ = cadastrar_clinica(cursor)
+            if not id_clinica:
+                return None
+        else:
+            print("Operação cancelada. Cadastre uma clínica primeiro (Opção 7).")
+            return None
+
     if nome_sugerido:
         nome = input(f"Nome completo [{nome_sugerido}]: ").strip() or nome_sugerido
     else:
@@ -233,13 +292,26 @@ def cadastrar_cliente(cursor, nome_sugerido: str = "") -> int | None:
     """
     cursor.execute(sql, (nome, cpf, telefone, endereco, id_clinica))
     id_novo = cursor.fetchone()[0]
-    print(f"Tutor '{nome}' cadastrado com sucesso (ID: {id_novo}) na {nome_clinica}!")
+    print(f"\nTutor '{nome}' cadastrado com sucesso (ID: {id_novo}) na {nome_clinica}!")
     return id_novo
 
 
 def cadastrar_veterinario(cursor) -> tuple[int | None, int | None, str | None]:
     """Cadastra um novo funcionário veterinário no sistema."""
     print("\n-- Cadastro de Funcionário / Veterinário --")
+
+    # Dependência: precisa ter ao menos uma clínica cadastrada
+    if _contar_registros(cursor, "clinica") == 0:
+        print("\n[Dependência não atendida] Não é possível cadastrar um veterinário sem uma clínica cadastrada no sistema.")
+        cadastrar = input("Deseja cadastrar uma clínica agora? (s/n): ").strip().lower()
+        if cadastrar == "s":
+            id_clinica, nome_clinica = cadastrar_clinica(cursor)
+            if not id_clinica:
+                return None, None, None
+        else:
+            print("Operação cancelada. Cadastre uma clínica primeiro (Opção 7).")
+            return None, None, None
+
     nome = input("Nome completo (ex: Dr. Carlos Silva): ").strip()
     while not nome:
         nome = input("Nome é obrigatório: ").strip()
@@ -260,13 +332,27 @@ def cadastrar_veterinario(cursor) -> tuple[int | None, int | None, str | None]:
     """
     cursor.execute(sql, (nome, crmv, telefone, especialidade, id_clinica))
     id_novo = cursor.fetchone()[0]
-    print(f"Veterinário '{nome}' cadastrado com sucesso na {nome_clinica}!")
+    print(f"\nVeterinário '{nome}' cadastrado com sucesso na {nome_clinica}!")
     return id_novo, id_clinica, nome
 
 
 def cadastrar_animal(cursor, nome_sugerido: str = "") -> int | None:
     """Cadastra um novo animal vinculado a um tutor e inicializa seu prontuário."""
     print("\n-- Cadastro de Novo Animal (Pet) --")
+
+    # Dependência: não é possível cadastrar um animal sem cliente (tutor) cadastrado
+    if _contar_registros(cursor, "cliente") == 0:
+        print("\n[Dependência não atendida] Não é possível cadastrar um animal sem um cliente (tutor) cadastrado.")
+        cadastrar = input("Deseja cadastrar um novo tutor agora? (s/n): ").strip().lower()
+        if cadastrar == "s":
+            id_cliente = cadastrar_cliente(cursor)
+            if not id_cliente:
+                print("Cadastro do animal cancelado.")
+                return None
+        else:
+            print("Operação cancelada. Cadastre um cliente primeiro (Opção 6).")
+            return None
+
     if nome_sugerido:
         nome = input(f"Nome do Pet [{nome_sugerido}]: ").strip() or nome_sugerido
     else:
@@ -317,10 +403,23 @@ def cadastrar_animal(cursor, nome_sugerido: str = "") -> int | None:
     return id_animal
 
 
-# ── Atendimento: Agendamento e Vacinação ──────────────────────────────────
+# ── Atendimento: Agendamento e Vacinação (Com Validação de Dependências) ──
 def novo_agendamento(cursor):
     """Cadastra um novo agendamento de consulta ligando nomes de animal e veterinário."""
     print("\n-- Novo Agendamento de Consulta --")
+
+    # Dependência 1: não deve ser possível cadastrar consulta sem animais
+    if _contar_registros(cursor, "animal") == 0:
+        print("\n[Dependência não atendida] Não é possível cadastrar uma consulta sem animais cadastrados no sistema.")
+        print("Cadastre primeiro um animal (Opção 4).")
+        return
+
+    # Dependência 2: não deve ser possível cadastrar consulta sem veterinário
+    if _contar_registros(cursor, "veterinario") == 0:
+        print("\n[Dependência não atendida] Não é possível cadastrar uma consulta sem um funcionário/veterinário cadastrado.")
+        print("Cadastre primeiro um veterinário (Opção 5).")
+        return
+
     id_animal, nome_animal = selecionar_ou_buscar_animal(cursor)
     if not id_animal:
         print("Agendamento cancelado.")
@@ -328,7 +427,7 @@ def novo_agendamento(cursor):
 
     id_veterinario, id_clinica, nome_vet = selecionar_veterinario(cursor)
     if not id_veterinario:
-        print("Agendamento cancelado.")
+        print("Agendamento cancelado (é obrigatório selecionar um veterinário).")
         return
 
     data_atendimento = _ler_data("Data do Atendimento (AAAA-MM-DD): ", no_futuro=True)
@@ -347,6 +446,19 @@ def novo_agendamento(cursor):
 def registrar_vacina(cursor):
     """Registra aplicação de vacina ligando animal e veterinário por nome."""
     print("\n-- Aplicação de Vacina --")
+
+    # Dependência 1: precisa de animais cadastrados
+    if _contar_registros(cursor, "animal") == 0:
+        print("\n[Dependência não atendida] Não é possível registrar vacinação sem animais cadastrados no sistema.")
+        print("Cadastre primeiro um animal (Opção 4).")
+        return
+
+    # Dependência 2: não deve ser possível registrar vacina sem um veterinário
+    if _contar_registros(cursor, "veterinario") == 0:
+        print("\n[Dependência não atendida] Não é possível registrar uma vacina sem um funcionário/veterinário cadastrado.")
+        print("Cadastre primeiro um veterinário (Opção 5).")
+        return
+
     id_animal, nome_animal = selecionar_ou_buscar_animal(cursor)
     if not id_animal:
         print("Operação cancelada.")
@@ -354,7 +466,7 @@ def registrar_vacina(cursor):
 
     id_veterinario, _, nome_vet = selecionar_veterinario(cursor)
     if not id_veterinario:
-        print("Operação cancelada.")
+        print("Operação cancelada (é obrigatório indicar o veterinário aplicador).")
         return
 
     nome_vacina = input("Nome da Vacina (ex: Antirrábica, V10, V4): ").strip()
@@ -385,7 +497,18 @@ def registrar_vacina(cursor):
 
 
 def listar_agendamentos(cursor):
-    """Consulta os agendamentos através da view 'vw_agendamentos_resumo'."""
+    """Consulta os agendamentos através da view 'vw_agendamentos_resumo' com validação prévia."""
+    # Dependência: não deve ser possível visualizar o resumo de atendimentos sem ter atendimentos
+    if _contar_registros(cursor, "consulta") == 0:
+        print("\n" + "=" * 70)
+        print("       [DEPENDÊNCIA NÃO ATENDIDA] RESUMO DE ATENDIMENTOS        ")
+        print("=" * 70)
+        print("Não é possível visualizar o resumo porque ainda não há nenhum")
+        print("atendimento/consulta cadastrado no sistema.")
+        print("Cadastre ao menos um agendamento de consulta (Opção 1) antes de visualizar.")
+        print("=" * 70)
+        return
+
     print("\n" + "=" * 70)
     print("               RESUMO DOS AGENDAMENTOS (VIEW)              ")
     print("=" * 70)
@@ -397,12 +520,9 @@ def listar_agendamentos(cursor):
     cursor.execute(sql)
     registros = cursor.fetchall()
 
-    if not registros:
-        print("Nenhum agendamento encontrado no sistema.")
-    else:
-        for r in registros:
-            hora_str = str(r[2])[:5] if r[2] else "--:--"
-            print(f"ID #{r[0]} | {r[1]} às {hora_str} | Pet: {r[4]:<12} | Vet: {r[5]:<20} | Motivo: {r[3]}")
+    for r in registros:
+        hora_str = str(r[2])[:5] if r[2] else "--:--"
+        print(f"ID #{r[0]} | {r[1]} às {hora_str} | Pet: {r[4]:<12} | Vet: {r[5]:<20} | Motivo: {r[3]}")
     print("=" * 70)
 
 
@@ -417,6 +537,7 @@ def menu_principal() -> str:
     print(" [4] Cadastrar Novo Animal (Pet)")
     print(" [5] Cadastrar Funcionário / Veterinário")
     print(" [6] Cadastrar Novo Tutor (Cliente)")
+    print(" [7] Cadastrar Nova Clínica")
     print(" [0] Sair")
     print("=" * 55)
     return input("Escolha uma opção: ").strip()
@@ -435,7 +556,7 @@ def main():
         while True:
             opcao = menu_principal()
 
-            if opcao in ("1", "2", "4", "5", "6"):
+            if opcao in ("1", "2", "4", "5", "6", "7"):
                 try:
                     if opcao == "1":
                         novo_agendamento(cursor)
@@ -447,6 +568,8 @@ def main():
                         cadastrar_veterinario(cursor)
                     elif opcao == "6":
                         cadastrar_cliente(cursor)
+                    elif opcao == "7":
+                        cadastrar_clinica(cursor)
                     conn.commit()
                 except (ValueError, pyodbc.Error) as erro:
                     conn.rollback()
